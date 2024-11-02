@@ -188,6 +188,90 @@ module DataStructure = struct
         else update st ((v * 2) + 1) (tm + 1) tr pos new_val;
         t.(v) <- t.(v * 2) + t.((v * 2) + 1)
   end
+
+  module ImmutableSegmentTree = struct end
+
+  module DSU : sig
+    type t
+
+    val empty : t
+    val make_set : int -> t -> t option
+    val union_sets : int -> int -> t -> t option
+    val find_set : int -> t -> int
+    val find_set_opt : int -> t -> int option
+  end = struct
+    module IntMap = Map.Make (Int)
+
+    type t = {
+      parent : int IntMap.t;
+      size : int IntMap.t;
+    }
+
+    let empty = { parent = IntMap.empty; size = IntMap.empty }
+
+    let make_set x s =
+      if IntMap.mem x s.parent then None
+      else
+        Some
+          {
+            parent = IntMap.add x x s.parent;
+            size = IntMap.add x 1 s.size;
+          }
+
+    let rec find_set x s = failwith "Todo"
+    (* let parent = IntMap.find x s.parent in if x = parent then x else
+       find_set parent s *)
+
+    let find_set_opt = failwith "todo"
+
+    let union_sets a b s =
+      if (not (IntMap.mem a s.parent)) || not (IntMap.mem b s.parent)
+      then None
+      else if a = b then Some s
+      else
+        let a' = find_set a s in
+        let b' = find_set b s in
+        failwith "todo"
+  end
+
+  module MutableDSU = struct
+    type 'a t = {
+      parent : ('a, 'a) Hashtbl.t;
+      size : ('a, int) Hashtbl.t;
+    }
+
+    let create () =
+      { parent = Hashtbl.create 10; size = Hashtbl.create 10 }
+
+    let make_set (uf : 'a t) x : unit =
+      Hashtbl.add uf.parent x x;
+      Hashtbl.add uf.size x 1
+
+    let rec find (uf : 'a t) x : 'a =
+      let p = Hashtbl.find uf.parent x in
+      if p = x then x
+      else
+        let root = find uf p in
+        Hashtbl.replace uf.parent x root;
+        root
+
+    let find_opt uf x = try Some (find uf x) with Not_found -> None
+
+    let union uf x y =
+      let root_x = find uf x in
+      let root_y = find uf y in
+      if root_x <> root_y then
+        let size_x = Hashtbl.find uf.size root_x in
+        let size_y = Hashtbl.find uf.size root_y in
+        if size_x < size_y then begin
+          Hashtbl.replace uf.parent root_x root_y;
+          Hashtbl.replace uf.size root_y (size_x + size_y)
+        end
+        else begin
+          Hashtbl.replace uf.parent root_y root_x;
+          Hashtbl.replace uf.size root_x (size_x + size_y)
+        end
+  end
 end
 
 module Algorithm = struct
